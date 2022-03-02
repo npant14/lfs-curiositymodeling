@@ -10,13 +10,13 @@ sig State {
 abstract sig Tile {
   sup: lone Tile
 }
-one sig ONE, TWO, FOUR, EIGHT, SIXTEEN, THIRTYTWO, SIXTYFOUR, ONETWENTYEIGHT extends Tile {}
-one sig TWOFIFTYSIX, FIVETWELVE, TENTWENTYFOUR, TWENTYFOURTYEIGHT extends Tile {}
+one sig TWO, FOUR extends Tile {}
+one sig TWOFIFTYSIX, EIGHT, SIXTEEN, THIRTYTWO, SIXTYFOUR, ONETWENTYEIGHT, FIVETWELVE, TENTWENTYFOUR, TWENTYFOURTYEIGHT extends Tile {}
 
 abstract sig Direction {}
 one sig Left, Right, Up, Down extends Direction {} 
 pred increasingOrder{
-  ONE.sup = TWO
+  
   TWO.sup = FOUR
   FOUR.sup = EIGHT
   EIGHT.sup = SIXTEEN
@@ -37,7 +37,7 @@ pred increasingOrder{
 pred wellformed {
   all s: State | {
     all row, col: Int | {
-      (row < 0 or row > 4 or col < 0 or col > 4) 
+      (row < 0 or row > 3 or col < 0 or col > 3) 
         implies no s.board[row][col]    
     }
   }
@@ -79,6 +79,7 @@ pred possibleMove[pre: State, move: Direction]{
   }
 }
 
+
 // transition, move, something.
 // unclear what is necessary for this pred at this point in time.  
 // Can't move in a direction that you can't move in
@@ -97,67 +98,67 @@ pred move [pre: State, theMove: Direction, post: State]{
       }
       -- If there are twp tiles in the row
       #{col: Int | some pre.board[row][col]} = 2 => {
-       some col1, col2: Int, t1, t2: Tile |{
+       some col1, col2: Int|{
          -- t1 and t2 are disjoint
-         pre.board[row][col1] = t1 and pre.board[row][col2] = t2
+         some pre.board[row][col1] and some pre.board[row][col2]
          -- col1 is on the left of col 2
          col1 < col2
          -- if both squares are the same, the post row will only have their sup on the left
-         t1 = t2 =>{
-           post.board[row][0] = t1.sup and no post.board[row][1] and no post.board[row][2] and no post.board[row][3]
+         pre.board[row][col1] = pre.board[row][col2] =>{
+           (post.board[row][0] = pre.board[row][col1][sup]) and (no post.board[row][1]) and (no post.board[row][2]) and (no post.board[row][3])
          }
          -- if they are both different, then the left most tile goes to the far leftm, and the second most goes to the next spot
-         (not t1 = t2) =>{
-           post.board[row][0] = t1 and post.board[row][1] = t2 and no post.board[row][2] and no post.board[row][3]
+         (not pre.board[row][col1] = pre.board[row][col2]) =>{
+           post.board[row][0] = pre.board[row][col1] and post.board[row][1] = pre.board[row][col2] and no post.board[row][2] and no post.board[row][3]
          }
        }
         
       }
       -- If there are 3 tiles in the row
       #{col: Int | some pre.board[row][col]} = 3 => {
-        some col1, col2, col3: Int, t1, t2, t3: Tile | {
+        some col1, col2, col3: Int| {
           -- t1 is on the left, t3 is on the right
-          pre.board[row][col1] = t1 and pre.board[row][col2] = t2 and pre.board[row][col3] = t3
+          some pre.board[row][col1] and some pre.board[row][col2] and some pre.board[row][col3]
           col1 < col2 and col2 < col3
           -- if the two on the far left are the same, comine them and put the 
           -- extra guy next to them,
-          t1 = t2 => {
-            post.board[row][0] = t1.sup and post.board[row][1] = t3 and no post.board[row][2] and no post.board[row][3]
+          pre.board[row][col1] = pre.board[row][col2] => {
+            post.board[row][0] = pre.board[row][col1][sup] and post.board[row][1] = pre.board[row][col3] and no post.board[row][2] and no post.board[row][3]
           }
           -- If the left two arent equal, but the right two are, ...
-          ((not t1 = t2) and t2 = t3) => {
-            post.board[row][0] = t1 and post.board[row][1] = t3.sup and no post.board[row][2] and no post.board[row][3]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and pre.board[row][col2] = pre.board[row][col3]) => {
+            post.board[row][0] = pre.board[row][col1] and post.board[row][1] = pre.board[row][col3][sup] and no post.board[row][2] and no post.board[row][3]
           }
           -- if none are equal, just push them all to the left
-          ((not t1 = t2) and (not t2 = t3)) => {
-             post.board[row][0] = t1 and post.board[row][1] = t2 and post.board[row][2] = t3 and no post.board[row][3]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and (not pre.board[row][col2] = pre.board[row][col3])) => {
+             post.board[row][0] = pre.board[row][col1] and post.board[row][1] = pre.board[row][col2] and post.board[row][2] = pre.board[row][col3] and no post.board[row][3]
           }
         }
       }
       #{col: Int | some pre.board[row][col]} = 4 =>{
-        some col1, col2, col3, col4: Int, t1, t2, t3, t4: Tile | {
+        some col1, col2, col3, col4: Int| {
           -- coll one has t1, and so on...
-          pre.board[row][col1] = t1 and pre.board[row][col2] = t2 and pre.board[row][col3] = t3 and pre.board[row][col4] = t4
+          some pre.board[row][col1] and some pre.board[row][col2] and some pre.board[row][col3] and some pre.board[row][col4]
           col1 < col2 and col2 < col3 and col3 < col4
           --if there are two matches in the row, combine both fo them on the left
-          (t1 = t2 and t3 = t4) =>{
-            post.board[row][0] = t1.sup and post.board[row][1] = t3.sup and no post.board[row][2] and no post.board[row][3]
+          (pre.board[row][col1] = pre.board[row][col2] and pre.board[row][col3] = pre.board[row][col4]) =>{
+            post.board[row][0] = pre.board[row][col1][sup] and post.board[row][1] = pre.board[row][col3][sup] and no post.board[row][2] and no post.board[row][3]
           }
           -- If the left is a mathc, comine those two
-          (t1 = t2 and (not t3 = t4)) =>{
-            post.board[row][0] = t1.sup and post.board[row][1] = t3 and post.board[row][2] = t4 and no post.board[row][3]
+          (pre.board[row][col1] = pre.board[row][col2] and (not pre.board[row][col3] = pre.board[row][col4])) =>{
+            post.board[row][0] = pre.board[row][col1][sup] and post.board[row][1] = pre.board[row][col3] and post.board[row][2] = pre.board[row][col4] and no post.board[row][3]
           }
           -- if the middle is a match, combine the middle
-          ((not t1 = t2) and t2 = t3) =>{
-            post.board[row][0] = t1 and post.board[row][1] = t2.sup and post.board[row][2] = t4 and no post.board[row][3]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and pre.board[row][col2] = pre.board[row][col3]) =>{
+            post.board[row][0] = pre.board[row][col1] and post.board[row][1] = pre.board[row][col2][sup] and post.board[row][2] = pre.board[row][col4] and no post.board[row][3]
           }
           -- if the right is the only match, combine
-          ((not t1 = t2) and (not t2 = t3) and (t3 = t4)) =>{
-            post.board[row][0] = t1 and post.board[row][1] = t2 and post.board[row][2] = t3.sup and no post.board[row][3]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and (not pre.board[row][col2] = pre.board[row][col3]) and (pre.board[row][col3] = pre.board[row][col4])) =>{
+            post.board[row][0] = pre.board[row][col1] and post.board[row][1] = pre.board[row][col2] and post.board[row][2] = pre.board[row][col3][sup] and no post.board[row][3]
           }
           -- if there are no matches, then the row stays the same
-          ((not t1 = t2) and (not t2 = t3) and (not t3=t4)) => {
-            post.board[row] = pre.board[row]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and (not pre.board[row][col2] = pre.board[row][col3]) and (not pre.board[row][col3]=pre.board[row][col4])) => {
+          all col: Int | post.board[row][col] = pre.board[row][col]
           }
         }
       }
@@ -177,67 +178,67 @@ pred move [pre: State, theMove: Direction, post: State]{
       }
       -- If there are twp tiles in the row
       #{col: Int | some pre.board[row][col]} = 2 => {
-       some col1, col2: Int, t1, t2: Tile |{
+       some col1, col2: Int |{
          -- t1 and t2 are disjoint
-         pre.board[row][col1] = t1 and pre.board[row][col2] = t2
+         some pre.board[row][col1] and some pre.board[row][col2]
          -- col1 is on the left of col 2
          col1 < col2
          -- if both squares are the same, the post row will only have their sup on the right
-         t1 = t2 =>{
-           post.board[row][3] = t1.sup and no post.board[row][1] and no post.board[row][2] and no post.board[row][0]
+         pre.board[row][col1] = pre.board[row][col2] =>{
+           post.board[row][3] = pre.board[row][col1][sup] and no post.board[row][1] and no post.board[row][2] and no post.board[row][0]
          }
          -- if they are both different, then the right most tile goes to the far right, and the second most goes to the next spot
-         (not t1 = t2) =>{
-           post.board[row][2] = t1 and post.board[row][3] = t2 and no post.board[row][0] and no post.board[row][1]
+         (not pre.board[row][col1] = pre.board[row][col2]) =>{
+           post.board[row][2] = pre.board[row][col1] and post.board[row][3] = pre.board[row][col2] and no post.board[row][0] and no post.board[row][1]
          }
        }
         
       }
       -- If there are 3 tiles in the row
       #{col: Int | some pre.board[row][col]} = 3 => {
-        some col1, col2, col3: Int, t1, t2, t3: Tile | {
+        some col1, col2, col3: Int | {
           -- t1 is on the left, t3 is on the right
-          pre.board[row][col1] = t1 and pre.board[row][col2] = t2 and pre.board[row][col3] = t3
+          some pre.board[row][col1] and some pre.board[row][col2] and some pre.board[row][col3]
           col1 < col2 and col2 < col3
           -- if the two on the far left are the same, comine them and put the 
           -- extra guy next to them,
-          t1 = t2 => {
-            post.board[row][2] = t1.sup and post.board[row][3] = t3 and no post.board[row][0] and no post.board[row][1]
+          pre.board[row][col1] = pre.board[row][col2] => {
+            post.board[row][2] = pre.board[row][col1][sup] and post.board[row][3] = pre.board[row][col3] and no post.board[row][0] and no post.board[row][1]
           }
           -- If the left two arent equal, but the right two are, ...
-          ((not t1 = t2) and t2 = t3) => {
-            post.board[row][2] = t1 and post.board[row][3] = t3.sup and no post.board[row][0] and no post.board[row][1]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and pre.board[row][col2] = pre.board[row][col3]) => {
+            post.board[row][2] = pre.board[row][col1] and post.board[row][3] = pre.board[row][col3][sup] and no post.board[row][0] and no post.board[row][1]
           }
           -- if none are equal, just push them all to the right
-          ((not t1 = t2) and (not t2 = t3)) => {
-             post.board[row][1] = t1 and post.board[row][2] = t2 and post.board[row][3] = t3 and no post.board[row][0]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and (not pre.board[row][col2] = pre.board[row][col3])) => {
+             post.board[row][1] = pre.board[row][col1] and post.board[row][2] = pre.board[row][col2] and post.board[row][3] = pre.board[row][col3] and no post.board[row][0]
           }
         }
       }
       #{col: Int | some pre.board[row][col]} = 4 =>{
-        some col1, col2, col3, col4: Int, t1, t2, t3, t4: Tile | {
+        some col1, col2, col3, col4: Int | {
           -- coll one has t1, and so on...
-          pre.board[row][col1] = t1 and pre.board[row][col2] = t2 and pre.board[row][col3] = t3 and pre.board[row][col4] = t4
+          some pre.board[row][col1] and some pre.board[row][col2] and some pre.board[row][col3] and some pre.board[row][col4]
           col1 < col2 and col2 < col3 and col3 < col4
           --if there are two matches in the row, combine both of them on the right
-          (t1 = t2 and t3 = t4) =>{
-            post.board[row][2] = t1.sup and post.board[row][3] = t3.sup and no post.board[row][0] and no post.board[row][1]
+          (pre.board[row][col1] = pre.board[row][col2] and pre.board[row][col3] = pre.board[row][col4]) =>{
+            post.board[row][2] = pre.board[row][col1][sup] and post.board[row][3] = pre.board[row][col3][sup] and no post.board[row][0] and no post.board[row][1]
           }
           -- If the left is a match, comine those two
-          (t1 = t2 and (not t3 = t4)) =>{
-            post.board[row][1] = t1.sup and post.board[row][2] = t3 and post.board[row][3] = t4 and no post.board[row][0]
+          (pre.board[row][col1] = pre.board[row][col2] and (not pre.board[row][col3] = pre.board[row][col4])) =>{
+            post.board[row][1] = pre.board[row][col1][sup] and post.board[row][2] = pre.board[row][col3] and post.board[row][3] = pre.board[row][col4] and no post.board[row][0]
           }
           -- if the middle is a match, combine the middle
-          ((not t1 = t2) and t2 = t3) =>{
-            post.board[row][1] = t1 and post.board[row][2] = t2.sup and post.board[row][3] = t4 and no post.board[row][0]
+          ((not pre.board[row][col3] = pre.board[row][col4]) and pre.board[row][col2] = pre.board[row][col3]) =>{
+            post.board[row][1] = pre.board[row][col1] and post.board[row][2] = pre.board[row][col2][sup] and post.board[row][3] = pre.board[row][col4] and no post.board[row][0]
           }
           -- if the right is the only match, combine
-          ((not t1 = t2) and (not t2 = t3) and (t3 = t4)) =>{
-            post.board[row][1] = t1 and post.board[row][2] = t2 and post.board[row][3] = t3.sup and no post.board[row][0]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and (not pre.board[row][col2] = pre.board[row][col3]) and (pre.board[row][col3] = pre.board[row][col4])) =>{
+            post.board[row][1] = pre.board[row][col1] and post.board[row][2] = pre.board[row][col2] and post.board[row][3] = pre.board[row][col3][sup] and no post.board[row][0]
           }
           -- if there are no matches, then the row stays the same
-          ((not t1 = t2) and (not t2 = t3) and (not t3=t4)) => {
-            post.board[row] = pre.board[row]
+          ((not pre.board[row][col1] = pre.board[row][col2]) and (not pre.board[row][col2] = pre.board[row][col3]) and (not pre.board[row][col3]= pre.board[row][col4])) => {
+            all col: Int | post.board[row][col] = pre.board[row][col]
           }
         }
       }
@@ -259,66 +260,66 @@ pred move [pre: State, theMove: Direction, post: State]{
       }
       -- If there are twp tiles in the row
       #{row: Int | some pre.board[row][col]} = 2 => {
-       some row1, row2: Int, t1, t2: Tile |{
+       some row1, row2: Int |{
          -- t1 and t2 are disjoint
-         pre.board[col][row1] = t1 and pre.board[col][row2] = t2
+         some pre.board[row1][col] and some pre.board[row2][col]
          -- col1 is on the top of col 2
          row1 < row2
          -- if both squares are the same, the post row will only have their sup on the left
-         t1 = t2 =>{
-           post.board[0][col] = t1.sup and no post.board[1][col] and no post.board[2][col] and no post.board[3][col]
+         pre.board[row1][col] = pre.board[row2][col] =>{
+           post.board[0][col] = pre.board[row1][col][sup] and no post.board[1][col] and no post.board[2][col] and no post.board[3][col]
          }
          -- if they are both different, then the left most tile goes to the far leftm, and the second most goes to the next spot
-         (not t1 = t2) =>{
-           post.board[0][col] = t1 and post.board[1][col] = t2 and no post.board[2][col] and no post.board[3][col]
+         (not pre.board[row1][col] = pre.board[row2][col]) =>{
+           post.board[0][col] = pre.board[row1][col] and post.board[1][col] = pre.board[row2][col] and no post.board[2][col] and no post.board[3][col]
          }
        }
         
       }
       -- If there are 3 tiles in the row
       #{row: Int | some pre.board[row][col]} = 3 => {
-        some row1, row2, row3: Int, t1, t2, t3: Tile | {
+        some row1, row2, row3: Int| {
           -- t1 is on the left, t3 is on the right
-          pre.board[row1][col] = t1 and pre.board[row2][col] = t2 and pre.board[row3][col] = t3
+          some pre.board[row1][col] and some pre.board[row2][col] and some pre.board[row3][col]
           row1 < row2 and row2 < row3
           -- if the two on the far left are the same, comine them and put the 
           -- extra guy next to them,
-          t1 = t2 => {
-            post.board[0][col] = t1.sup and post.board[1][col] = t3 and no post.board[2][col] and no post.board[3][col]
+          pre.board[row1][col] = pre.board[row2][col] => {
+            post.board[0][col] = pre.board[row1][col][sup] and post.board[1][col] = pre.board[row3][col] and no post.board[2][col] and no post.board[3][col]
           }
           -- If the left two arent equal, but the right two are, ...
-          ((not t1 = t2) and t2 = t3) => {
-            post.board[0][col] = t1 and post.board[1][col] = t3.sup and no post.board[2][col] and no post.board[3][col]
+          ((not pre.board[row1][col] = pre.board[row2][col]) and pre.board[row2][col] = pre.board[row3][col]) => {
+            post.board[0][col] = pre.board[row1][col] and post.board[1][col] = pre.board[row3][col][sup] and no post.board[2][col] and no post.board[3][col]
           }
           -- if none are equal, just push them all to the left
-          ((not t1 = t2) and (not t2 = t3)) => {
-             post.board[0][col] = t1 and post.board[1][col] = t2 and post.board[2][col] = t3 and no post.board[3][col]
+          ((not pre.board[row1][col] = pre.board[row2][col]) and (not pre.board[row2][col] = pre.board[row3][col])) => {
+             post.board[0][col] = pre.board[row1][col] and post.board[1][col] = pre.board[row2][col] and post.board[2][col] = pre.board[row3][col] and no post.board[3][col]
           }
         }
       }
       #{row: Int | some pre.board[row][col]} = 4 =>{
-        some row1, row2, row3, row4: Int, t1, t2, t3, t4: Tile | {
+        some row1, row2, row3, row4: Int| {
           -- coll one has t1, and so on...
-          pre.board[row1][col] = t1 and pre.board[row2][col] = t2 and pre.board[row3][col] = t3 and pre.board[row4][col] = t4
+          some pre.board[row1][col] and some pre.board[row2][col] and some pre.board[row3][col] and some pre.board[row4][col]
           row1 < row2 and row2 < row3 and row3 < row4
           --if there are two matches in the row, combine both fo them on the left
-          (t1 = t2 and t3 = t4) =>{
-            post.board[0][col] = t1.sup and post.board[1][col] = t3.sup and no post.board[2][col] and no post.board[3][col]
+          (pre.board[row1][col] = pre.board[row2][col] and pre.board[row3][col] = pre.board[row4][col]) =>{
+            post.board[0][col] = pre.board[row1][col][sup] and post.board[1][col] = pre.board[row3][col][sup] and no post.board[2][col] and no post.board[3][col]
           }
           -- If the left is a mathc, comine those two
-          (t1 = t2 and (not t3 = t4)) =>{
-            post.board[0][col] = t1.sup and post.board[1][col] = t3 and post.board[2][col] = t4 and no post.board[3][col]
+          (pre.board[row1][col] = pre.board[row2][col] and (not pre.board[row3][col] = pre.board[row4][col])) =>{
+            post.board[0][col] = pre.board[row1][col][sup] and post.board[1][col] = pre.board[row3][col] and post.board[2][col] = pre.board[row4][col] and no post.board[3][col]
           }
           -- if the middle is a match, combine the middle
-          ((not t1 = t2) and t2 = t3) =>{
-            post.board[0][col] = t1 and post.board[1][col] = t2.sup and post.board[2][col] = t4 and no post.board[3][col]
+          ((not pre.board[row1][col] = pre.board[row2][col]) and pre.board[row2][col] = pre.board[row3][col]) =>{
+            post.board[0][col] = pre.board[row1][col] and post.board[1][col] = pre.board[row2][col][sup] and post.board[2][col] = pre.board[row4][col] and no post.board[3][col]
           }
           -- if the right is the only match, combine
-          ((not t1 = t2) and (not t2 = t3) and (t3 = t4)) =>{
-            post.board[0][col] = t1 and post.board[1][col] = t2 and post.board[2][col] = t3.sup and no post.board[3][col]
+          ((not pre.board[row1][col] = pre.board[row2][col]) and (not pre.board[row2][col] = pre.board[row3][col]) and (pre.board[row3][col] = pre.board[row4][col])) =>{
+            post.board[0][col] = pre.board[row1][col] and post.board[1][col] = pre.board[row2][col] and post.board[2][col] = pre.board[row3][col][sup] and no post.board[3][col]
           }
           -- if there are no matches, then the row stays the same
-          ((not t1 = t2) and (not t2 = t3) and (not t3=t4)) => {
+          ((not pre.board[row1][col] = pre.board[row2][col]) and (not pre.board[row2][col] = pre.board[row3][col]) and (not pre.board[row3][col]= pre.board[row4][col])) => {
             all row: Int | pre.board[row][col] = post.board[row][col]
           }
         }
@@ -340,66 +341,66 @@ pred move [pre: State, theMove: Direction, post: State]{
       }
       -- If there are twp tiles in the row
       #{row: Int | some pre.board[row][col]} = 2 => {
-       some row1, row2: Int, t1, t2: Tile |{
+       some row1, row2: Int|{
          -- t1 and t2 are disjoint
-         pre.board[row1][col] = t1 and pre.board[row2][col] = t2
+         some pre.board[row1][col] and some pre.board[row2][col]
          -- col1 is on the left of col 2
          row1 < row2
          -- if both squares are the same, the post row will only have their sup on the right
-         t1 = t2 =>{
-           post.board[3][col] = t1.sup and no post.board[1][col] and no post.board[2][col] and no post.board[0][col]
+         pre.board[row1][col] = pre.board[row2][col] =>{
+           post.board[3][col] = pre.board[row1][col][sup] and no post.board[1][col] and no post.board[2][col] and no post.board[0][col]
          }
          -- if they are both different, then the right most tile goes to the far right, and the second most goes to the next spot
-         (not t1 = t2) =>{
-           post.board[2][col] = t1 and post.board[3][col] = t2 and no post.board[0][col] and no post.board[1][col]
+         (not pre.board[row1][col] = pre.board[row2][col]) =>{
+           post.board[2][col] = pre.board[row1][col] and post.board[3][col] = pre.board[row2][col] and no post.board[0][col] and no post.board[1][col]
          }
        }
         
       }
       -- If there are 3 tiles in the row
       #{row: Int | some pre.board[row][col]} = 3 => {
-        some row1, row2, row3: Int, t1, t2, t3: Tile | {
+        some row1, row2, row3: Int| {
           -- t1 is on the left, t3 is on the right
-          pre.board[row1][col] = t1 and pre.board[row2][col] = t2 and pre.board[row2][col] = t3
+          some pre.board[row1][col] and some pre.board[row2][col] and some pre.board[row2][col]
           row1 < row2 and row2 < row3
           -- if the two on the far left are the same, comine them and put the 
           -- extra guy next to them,
-          t1 = t2 => {
-            post.board[2][col] = t1.sup and post.board[3][col] = t3 and no post.board[0][col] and no post.board[1][col]
+          pre.board[row1][col] = pre.board[row2][col] => {
+            post.board[2][col] = pre.board[row1][col][sup] and post.board[3][col] = pre.board[row3][col] and no post.board[0][col] and no post.board[1][col]
           }
           -- If the left two arent equal, but the right two are, ...
-          ((not t1 = t2) and t2 = t3) => {
-            post.board[2][col] = t1 and post.board[3][col] = t3.sup and no post.board[0][col] and no post.board[1][col]
+          ((not pre.board[row1][col] = pre.board[row2][col]) and pre.board[row2][col] = pre.board[row3][col]) => {
+            post.board[2][col] = pre.board[row1][col] and post.board[3][col] = pre.board[row3][col][sup] and no post.board[0][col] and no post.board[1][col]
           }
           -- if none are equal, just push them all to the right
-          ((not t1 = t2) and (not t2 = t3)) => {
-             post.board[1][col] = t1 and post.board[2][col] = t2 and post.board[3][col] = t3 and no post.board[0][col]
+          ((not pre.board[row1][col] = pre.board[row2][col]) and (not pre.board[row2][col] = pre.board[row3][col])) => {
+             post.board[1][col] = pre.board[row1][col] and post.board[2][col] = pre.board[row2][col] and post.board[3][col] = pre.board[row3][col] and no post.board[0][col]
           }
         }
       }
       #{row: Int | some pre.board[row][col]} = 4 =>{
-        some row1, row2, row3, row4: Int, t1, t2, t3, t4: Tile | {
+        some row1, row2, row3, row4: Int| {
           -- coll one has t1, and so on...
-          pre.board[row1][col] = t1 and pre.board[row2][col] = t2 and pre.board[row2][col] = t3 and pre.board[row4][col] = t4
+          some pre.board[row1][col] and some pre.board[row2][col] and some pre.board[row2][col] and some pre.board[row4][col]
           row1 < row2 and row2 < row3 and row3 < row4
           --if there are two matches in the row, combine both of them on the right
-          (t1 = t2 and t3 = t4) =>{
-            post.board[2][col] = t1.sup and post.board[3][col] = t3.sup and no post.board[0][col] and no post.board[1][col]
+          (pre.board[row1][col] = pre.board[row2][col] and pre.board[row3][col] = pre.board[row4][col]) =>{
+            post.board[2][col] = pre.board[row1][col][sup] and post.board[3][col] = pre.board[row3][col][sup] and no post.board[0][col] and no post.board[1][col]
           }
           -- If the left is a match, comine those two
-          (t1 = t2 and (not t3 = t4)) =>{
-            post.board[1][col] = t1.sup and post.board[2][col] = t3 and post.board[3][col] = t4 and no post.board[0][col]
+          (pre.board[row1][col] = pre.board[row2][col] and (not pre.board[row3][col] = pre.board[row4][col])) =>{
+            post.board[1][col] = pre.board[row1][col][sup] and post.board[2][col] = pre.board[row3][col] and post.board[3][col] = pre.board[row4][col] and no post.board[0][col]
           }
           -- if the middle is a match, combine the middle
-          ((not t1 = t2) and t2 = t3) =>{
-            post.board[1][col] = t1 and post.board[2][col] = t2.sup and post.board[3][col] = t4 and no post.board[0][col]
+          ((not pre.board[row3][col] = pre.board[row4][col]) and pre.board[row2][col] = pre.board[row3][col]) =>{
+            post.board[1][col] = pre.board[row1][col] and post.board[2][col] = pre.board[row2][col][sup] and post.board[3][col] = pre.board[row4][col] and no post.board[0][col]
           }
           -- if the right is the only match, combine
-          ((not t1 = t2) and (not t2 = t3) and (t3 = t4)) =>{
-            post.board[1][col] = t1 and post.board[2][col] = t2 and post.board[3][col] = t3.sup and no post.board[0][col]
+          ((not pre.board[row1][col] = pre.board[row2][col]) and (not pre.board[row2][col] = pre.board[row3][col]) and (pre.board[row3][col] = pre.board[row4][col])) =>{
+            post.board[1][col] = pre.board[row1][col] and post.board[2][col] = pre.board[row2][col] and post.board[3][col] = pre.board[row3][col][sup] and no post.board[0][col]
           }
           -- if there are no matches, then the row stays the same
-          ((not t1 = t2) and (not t2 = t3) and (not t3=t4)) => {
+          ((not pre.board[row1][col] = pre.board[row2][col]) and (not pre.board[row2][col] = pre.board[row3][col]) and (not pre.board[row3][col]=pre.board[row4][col])) => {
             all row: Int | pre.board[row][col] = post.board[row][col]
           }
         }
@@ -407,5 +408,34 @@ pred move [pre: State, theMove: Direction, post: State]{
     }
   }
 }
+
+
+example validTransition is {some pre, post: State, d: Direction | move[pre,d,post]} for {
+  State = `S0 + `S1
+  TWO = `T2
+  FOUR = `T4
+  Tile = TWO + FOUR
+  sup = {
+    `T2 -> `T4
+  }
+  Left = `L
+  Right = `R
+  Up = `U
+  Down = `D
+  Direction = Left + Right + Up + Down
+  board = {
+    `S0 -> 0 -> 0 -> `T2 + 
+    `S0 -> 1 -> 1 -> `T2 + 
+    `S0 -> 2 -> 2 -> `T2 + 
+    `S0 -> 3 -> 4 -> `T2 + 
+    `S1 -> 0 -> 0 -> `T2 + 
+    `S1 -> 1 -> 0 -> `T2 + 
+    `S1 -> 2 -> 0 -> `T2 + 
+    `S1 -> 3 -> 0 -> `T2 
+  }
+
+
+}
+
 
 // pred trace
