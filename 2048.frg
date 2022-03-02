@@ -400,7 +400,7 @@ pred move [pre: State, theMove: Direction, post: State]{
 }
 
 
-example validTransition is {some pre, post: State, d: Direction | move[pre,d,post]} for {
+example validTransition1 is {some pre, post: State, d: Direction | move[pre,d,post]} for {
   State = `S0 + `S1
   TWO = `T2
   FOUR = `T4
@@ -423,8 +423,70 @@ example validTransition is {some pre, post: State, d: Direction | move[pre,d,pos
     `S1 -> 2 -> 0 -> `T2 + 
     `S1 -> 3 -> 0 -> `T2 
   }
+}
 
+example validTransition2 is {some pre, post: State, d: Direction | move[pre,d,post]} for {
+  State = `S0 + `S1
+  TWO = `T2
+  FOUR = `T4
+  Tile = TWO + FOUR
+  sup = {
+    `T2 -> `T4
+  }
+  Left = `L
+  Right = `R
+  Up = `U
+  Down = `D
+  Direction = Left + Right + Up + Down
+  board = {
+    `S0 -> 0 -> 0 -> `T2 + 
+    `S0 -> 0 -> 1 -> `T2 + 
+    `S1 -> 0 -> 0 -> `T4 
+  }
+}
 
+example validTransition2 is {some pre, post: State, d: Direction | move[pre,d,post]} for {
+  State = `S0 + `S1
+  TWO = `T2
+  FOUR = `T4
+  Tile = TWO + FOUR
+  sup = {
+    `T2 -> `T4
+  }
+  Left = `L
+  Right = `R
+  Up = `U
+  Down = `D
+  Direction = Left + Right + Up + Down
+  board = {
+    `S0 -> 0 -> 0 -> `T2 + 
+    `S0 -> 0 -> 2 -> `T2 + 
+    `S1 -> 0 -> 0 -> `T4 
+  }
+}
+
+example invalidTransition1 is {not (some pre, post: State, d: Direction | move[pre,d,post])} for {
+  State = `S0 + `S1
+  TWO = `T2
+  FOUR = `T4
+  Tile = TWO + FOUR
+  sup = {
+    `T2 -> `T4
+  }
+  Left = `L
+  Right = `R
+  Up = `U
+  Down = `D
+  Direction = Left + Right + Up + Down
+  board = {
+    `S0 -> 0 -> 0 -> `T2 + 
+    `S0 -> 1 -> 1 -> `T2 + 
+    `S0 -> 2 -> 2 -> `T2 + 
+    `S0 -> 3 -> 4 -> `T2 + 
+    `S1 -> 0 -> 0 -> `T2 + 
+    `S1 -> 1 -> 0 -> `T2 + 
+    `S1 -> 2 -> 0 -> `T2 
+  }
 }
 
 
