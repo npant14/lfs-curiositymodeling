@@ -13,6 +13,8 @@ abstract sig Tile {
 one sig ONE, TWO, FOUR, EIGHT, SIXTEEN, THIRTYTWO, SIXTYFOUR, ONETWENTYEIGHT extends Tile {}
 one sig TWOFIFTYSIX, FIVETWELVE, TENTWENTYFOUR, TWENTYFOURTYEIGHT extends Tile {}
 
+abstract sig Direction {}
+one sig Left, Right, Up, Down extends Direction {} 
 pred increasingOrder{
   ONE.sup = TWO
   TWO.sup = FOUR
@@ -313,7 +315,7 @@ pred move [pre: State, theMove: Direction, post: State]{
           }
           -- if the right is the only match, combine
           ((not t1 = t2) and (not t2 = t3) and (t3 = t4)) =>{
-            post.board[0][col] = t1 and post.board[1][row] = t2 and post.board[2][row] = t3.sup and no post.board[3][row]
+            post.board[0][col] = t1 and post.board[1][col] = t2 and post.board[2][col] = t3.sup and no post.board[3][col]
           }
           -- if there are no matches, then the row stays the same
           ((not t1 = t2) and (not t2 = t3) and (not t3=t4)) => {
@@ -340,7 +342,7 @@ pred move [pre: State, theMove: Direction, post: State]{
       #{row: Int | some pre.board[row][col]} = 2 => {
        some row1, row2: Int, t1, t2: Tile |{
          -- t1 and t2 are disjoint
-         pre.board[row1][col] = t1 and pre.board[row2][col2] = t2
+         pre.board[row1][col] = t1 and pre.board[row2][col] = t2
          -- col1 is on the left of col 2
          row1 < row2
          -- if both squares are the same, the post row will only have their sup on the right
