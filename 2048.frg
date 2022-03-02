@@ -4,7 +4,9 @@
 // contents to be discussed
 
 sig State {
-  board: pfunc Int -> Int -> Tile
+  board: pfunc Int -> Int -> Tile,
+  next: lone State,
+  type: one Int
 }
 
 abstract sig Tile {
@@ -30,51 +32,62 @@ pred wellformed {
       (row < 0 or row > 3 or col < 0 or col > 3) 
         implies no s.board[row][col]    
     }
+    s.type = 1 or s.type = 0
+    not s.next.type = s.type
   }
+  
 }
 
 // pred init condition
 pred initState[s: State] {
+  s.type = 0
+  // all row, col : Int | {
+  //   {
+  //     //start with two 2s on the board
+  //     {#{s.board[row][col] = TWO} = 2 and
+  //      #{s.board[row][col] = FOUR} = 0} or
+
+  //     //or start with one 2 and one 4
+  //     {#{s.board[row][col] = TWO} = 1 and
+  //     #{s.board[row][col] = FOUR} = 1}}
+
+  //     //everything else is a 0
+  //     not {s.board[row][col] = TWO or s.board[row][col] = FOUR} => no s.board[row][col]
+  // }
+
+  #{row, col: Int | s.board[row][col] = TWO} = 2 and #{row, col: Int | s.board[row][col] = FOUR} = 0 or 
+  #{row, col: Int | s.board[row][col] = TWO} = 1 and #{row, col: Int | s.board[row][col] = FOUR} = 1 or 
+  #{row, col: Int | s.board[row][col] = TWO} = 0 and #{row, col: Int | s.board[row][col] = FOUR} = 2
+  all row, col: Int | s.board[row][col] = TWO or  s.board[row][col] = FOUR or no s.board[row][col]
 
 }
 // pred final condition
-pred finalState[s: State] {
 
+pred finalState4[s: State] {
+  some row, col : Int | {
+    s.board[row][col] = FOUR
+  }
 }
 
 pred validCord[i: Int]{
   not(i < 0) and not(i > 3)
 }
 
-// says if this move is a possible candidate for a move
-pred possibleMove[pre: State, move: Direction]{
-  move = Left => {
-    some rowOfFilled, colOfFilled, rowOfEmpty, ColOfEmpty: Int | {
-      validCord[rowOfFilled] and validCord[colOfFilled] and validCord[rowOfEmpty] and validCord[ColOfEmpty]
-      some pre.board[rowOfFilled][colOfFilled]
-      no pre.board[rowOfEmpty][ColOfEmpty]
-      ColOfEmpty < colOfFilled
-    }
-  }
-  move = Right => {
 
-  }
 
-  move = Up => {
-
-  }
-
-  move = Down => {
-
+pred insert[pre: State, post: State]{
+  pre.type = 1
+  some row, col: Int | {
+    no pre.board[row][col]
+    post.board[row][col] = TWO or post.board[row][col] = FOUR
+    all row2, col2: Int | not pre.board[row2][col2] = post.board[row2][col2] => {row = row2 and col=col2}
   }
 }
-
 
 // transition, move, something.
 // unclear what is necessary for this pred at this point in time.  
 // Can't move in a direction that you can't move in
 pred move [pre: State, theMove: Direction, post: State]{
-  possibleMove[pre, theMove]
   theMove = Left => {
     -- for all rows
     all row: Int | {
@@ -399,6 +412,34 @@ pred move [pre: State, theMove: Direction, post: State]{
   }
 }
 
+// says if this move is a possible candidate for a move
+pred possibleMove[pre: State, d: Direction]{
+  // no post : State {
+  //   pre.board = post.board
+  //   move[]
+  // }
+  not move[pre, d, pre]
+}
+
+pred traces {
+  wellformed    
+    some initial: State | some final: State | {
+        initState[initial]
+        finalState4[final]
+        no s: State | s.next = initial
+        no final.next
+        all s: State | s != final implies {
+            some pre: State, m: Direction | {
+              pre.type = 0 => {
+                possibleMove[pre, m]
+                move[pre, m, pre.next]
+              }
+              pre.type = 1 => insert[pre, pre.next]
+            }
+        }
+    }
+}
+
 
 example validTransition1 is {some pre, post: State, d: Direction | move[pre,d,post]} for {
   State = `S0 + `S1
@@ -433,6 +474,7 @@ example validTransition2 is {some pre, post: State, d: Direction | move[pre,d,po
   sup = {
     `T2 -> `T4
   }
+
   Left = `L
   Right = `R
   Up = `U
@@ -453,19 +495,25 @@ example validTransition2 is {some pre, post: State, d: Direction | move[pre,d,po
   sup = {
     `T2 -> `T4
   }
+  type = {
+    `S0 -> 0 + 
+    `S1 -> 1
+  }
+  next = {
+    `S0 -> `S1
+  }
   Left = `L
   Right = `R
   Up = `U
   Down = `D
   Direction = Left + Right + Up + Down
   board = {
-    `S0 -> 0 -> 0 -> `T2 + 
-    `S0 -> 0 -> 2 -> `T2 + 
-    `S1 -> 0 -> 0 -> `T4 
+    `S0 -> 0 -> 3 -> `T2 + 
+    `S1 -> 0 -> 0 -> `T2 
   }
 }
 
-example invalidTransition1 is {not (some pre, post: State, d: Direction | move[pre,d,post])} for {
+example invalidTransition1 is not {some disj pre, post: State, d: Direction | move[pre,d,post]} for {
   State = `S0 + `S1
   TWO = `T2
   FOUR = `T4
@@ -473,20 +521,22 @@ example invalidTransition1 is {not (some pre, post: State, d: Direction | move[p
   sup = {
     `T2 -> `T4
   }
+  type = {
+    `S0 -> 0 + 
+    `S1 -> 1
+  }
+  next = {
+    `S0 -> `S1
+  }
   Left = `L
   Right = `R
   Up = `U
   Down = `D
   Direction = Left + Right + Up + Down
   board = {
-    `S0 -> 0 -> 0 -> `T2 + 
-    `S0 -> 1 -> 1 -> `T2 + 
-    `S0 -> 2 -> 2 -> `T2 + 
-    `S0 -> 3 -> 4 -> `T2 + 
-    `S1 -> 0 -> 0 -> `T2 + 
-    `S1 -> 1 -> 0 -> `T2 + 
-    `S1 -> 2 -> 0 -> `T2 
+    `S0 -> 0 -> 3 -> `T2 
   }
+  
 }
 
 
