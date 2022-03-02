@@ -10,11 +10,10 @@ sig State {
 abstract sig Tile {
   sup: lone Tile
 }
-one sig ONE, TWO, FOUR, EIGHT, SIXTEEN, THIRTYTWO, SIXTYFOUR, ONETWENTYEIGHT extends Tile {}
+one sig TWO, FOUR, EIGHT, SIXTEEN, THIRTYTWO, SIXTYFOUR, ONETWENTYEIGHT extends Tile {}
 one sig TWOFIFTYSIX, FIVETWELVE, TENTWENTYFOUR, TWENTYFOURTYEIGHT extends Tile {}
 
 pred increasingOrder{
-  ONE.sup = TWO
   TWO.sup = FOUR
   FOUR.sup = EIGHT
   EIGHT.sup = SIXTEEN
@@ -43,11 +42,40 @@ pred wellformed {
 
 // pred init condition
 pred initState[s: State] {
+  all row, col : Int | {
+    {
+      //start with two 2s on the board
+      {#{s.board[row][col] = TWO} = 2 and
+       #{s.board[row][col] = FOUR} = 0} or
 
+      //or start with one 2 and one 4
+      {#{s.board[row][col] = TWO} = 1 and
+      #{s.board[row][col] = FOUR} = 1}}
+
+      //everything else is a 0
+      not {s.board[row][col] = TWO or s.board[row][col] = FOUR} => no s.board[row][col]
+  }
 }
-// pred final condition
-pred finalState[s: State] {
 
+// pred final condition for reaching 2048
+pred finalState2048[s: State] {
+  some row, col : Int | {
+    s.board[row][col] = TWENTYFOURTYEIGHT
+  }
+}
+
+//pred for reaching 512
+pred finalState512[s: State] {
+  some row, col : Int | {
+    s.board[row][col] = FIVETWELVE
+  }
+}
+
+//pred for reaching 128
+pred finalState128[s: State] {
+  some row, col : Int | {
+    s.board[row][col] = ONETWENTYEIGHT
+  }
 }
 
 pred validCord[i: Int]{
@@ -77,8 +105,6 @@ pred possibleMove[pre: State, move: Direction]{
   }
 }
 
-// transition, move, something.
-// unclear what is necessary for this pred at this point in time.  
 // Can't move in a direction that you can't move in
 pred move [pre: State, theMove: Direction, post: State]{
   possibleMove[pre, theMove]
@@ -104,7 +130,7 @@ pred move [pre: State, theMove: Direction, post: State]{
          t1 = t2 =>{
            post.board[row][0] = t1.sup and no post.board[row][1] and no post.board[row][2] and no post.board[row][3]
          }
-         -- if they are both different, then the left most tile goes to the far leftm, and the second most goes to the next spot
+         -- if they are both different, then the left most tile goes to the far left, and the second most goes to the next spot
          (not t1 = t2) =>{
            post.board[row][0] = t1 and post.board[row][1] = t2 and no post.board[row][2] and no post.board[row][3]
          }
@@ -406,4 +432,17 @@ pred move [pre: State, theMove: Direction, post: State]{
   }
 }
 
-// pred trace
+//trace for game specify initial final and transition
+pred traces {
+  wellformed    
+    some initial: State | some final: State | {
+        init[initial]
+        no s: State | s.next = initial
+        no final.next
+        all s: State | s != final implies {
+            some pre, post: State, m: Direction | {
+              move [pre, m, post]
+            }
+        }
+    }
+}
