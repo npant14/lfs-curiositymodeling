@@ -11,23 +11,13 @@ abstract sig Tile {
   sup: lone Tile
 }
 one sig TWO, FOUR extends Tile {}
-one sig TWOFIFTYSIX, EIGHT, SIXTEEN, THIRTYTWO, SIXTYFOUR, ONETWENTYEIGHT, FIVETWELVE, TENTWENTYFOUR, TWENTYFOURTYEIGHT extends Tile {}
+
 
 abstract sig Direction {}
 one sig Left, Right, Up, Down extends Direction {} 
 pred increasingOrder{
-  
   TWO.sup = FOUR
-  FOUR.sup = EIGHT
-  EIGHT.sup = SIXTEEN
-  SIXTEEN.sup = THIRTYTWO
-  THIRTYTWO.sup = SIXTYFOUR
-  SIXTYFOUR.sup = ONETWENTYEIGHT
-  ONETWENTYEIGHT.sup = TWOFIFTYSIX
-  TWOFIFTYSIX.sup = FIVETWELVE
-  FIVETWELVE.sup = TENTWENTYFOUR
-  TENTWENTYFOUR.sup = TWENTYFOURTYEIGHT
-  no TWENTYFOURTYEIGHT.sup
+  no FOUR.sup
 }
 
 // some sig for move direction perhaps?
