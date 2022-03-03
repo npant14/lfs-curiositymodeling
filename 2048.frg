@@ -446,6 +446,69 @@ example invalidTransition1 is not {some disj pre, post: State, d: Direction | mo
   }
 }
 */
+
+example validInitState is {some s: State| initState[s]} for {
+  State = `S0
+  TWO = `T2_1 + `T2_2 
+  Tile = TWO + FOUR + EIGHT + SIXTEEN + THIRTYTWO
+
+  Left = `L
+  Right = `R
+  Up = `U
+  Down = `D
+  Direction = Left + Right + Up + Down
+
+  type = {
+    `S0 -> 0
+  }
+
+    board = {
+    `S0 -> 0 -> 0 -> `T2_1 + 
+    `S0 -> 1 -> 1 -> `T2_2
+  }
+}
+
+example TooManyTilesInitState is not {some s: State| initState[s]} for {
+  State = `S0
+  TWO = `T2_1 + `T2_2 + `T2_3
+  Tile = TWO + FOUR + EIGHT + SIXTEEN + THIRTYTWO
+
+  Left = `L
+  Right = `R
+  Up = `U
+  Down = `D
+  Direction = Left + Right + Up + Down
+
+  type = {
+    `S0 -> 0
+  }
+
+    board = {
+    `S0 -> 0 -> 0 -> `T2_1 + 
+    `S0 -> 1 -> 1 -> `T2_2 + 
+    `S0 -> 0 -> 1 -> `T2_3     
+  }
+}
+
+example NotEnoughTilesInitState is not {some s: State| initState[s]} for {
+  State = `S0
+  TWO = `T2_1 + `T2_2 + `T2_3
+  Tile = TWO + FOUR + EIGHT + SIXTEEN + THIRTYTWO
+
+  Left = `L
+  Right = `R
+  Up = `U
+  Down = `D
+  Direction = Left + Right + Up + Down
+
+  type = {
+    `S0 -> 0
+  }
+
+  board = {
+    `S0 -> 0 -> 0 -> `T2
+  }
+}
 run {
   traces
 } for 3 Int, 30 State for {next is linear}
