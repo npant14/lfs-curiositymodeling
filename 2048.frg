@@ -1,12 +1,11 @@
 #lang forge/bsl
 
-// empty file for the game
-// contents to be discussed
+//SIGS
 
 sig State {
   board: pfunc Int -> Int -> Tile,
   next: lone State,
-  type: one Int,
+  type: one Int, //type used to differentiate between move states and generation states
   dir: lone Direction
 }
 
@@ -18,6 +17,10 @@ one sig TWO, FOUR, EIGHT, SIXTEEN, THIRTYTWO extends Tile {}
 
 abstract sig Direction {}
 one sig Left, Right, Up, Down extends Direction {} 
+
+//PREDS
+
+//enforce increasing order of tiles for collisions
 pred increasingOrder{
   TWO.sup = FOUR
   FOUR.sup = EIGHT
@@ -26,10 +29,9 @@ pred increasingOrder{
   no THIRTYTWO.sup
 }
 
-// some sig for move direction perhaps?
 
 
-//well formedness for 4x4 board
+//well formedness for 3x3 board
 pred wellformed {
   increasingOrder
   all s: State | {
@@ -40,46 +42,33 @@ pred wellformed {
     s.type = 1 or s.type = 0
     not s.next.type = s.type
   }
-  
 }
 
-// pred init condition
+// constrain the initial condition to have only two tiles on the board
 pred initState[s: State] {
   s.type = 0
-  // all row, col : Int | {
-  //   {
-  //     //start with two 2s on the board
-  //     {#{s.board[row][col] = TWO} = 2 and
-  //      #{s.board[row][col] = FOUR} = 0} or
-
-  //     //or start with one 2 and one 4
-  //     {#{s.board[row][col] = TWO} = 1 and
-  //     #{s.board[row][col] = FOUR} = 1}}
-
-  //     //everything else is a 0
-  //     not {s.board[row][col] = TWO or s.board[row][col] = FOUR} => no s.board[row][col]
-  // }
 
   #{row, col: Int | s.board[row][col] = TWO} = 2 and #{row, col: Int | s.board[row][col] = FOUR} = 0 //or 
-  //#{row, col: Int | s.board[row][col] = TWO} = 1 and #{row, col: Int | s.board[row][col] = FOUR} = 1 or 
-  //#{row, col: Int | s.board[row][col] = TWO} = 0 and #{row, col: Int | s.board[row][col] = FOUR} = 2
+  #{row, col: Int | s.board[row][col] = TWO} = 1 and #{row, col: Int | s.board[row][col] = FOUR} = 1 or 
+  #{row, col: Int | s.board[row][col] = TWO} = 0 and #{row, col: Int | s.board[row][col] = FOUR} = 2
   all row, col: Int | s.board[row][col] = TWO or  s.board[row][col] = FOUR or no s.board[row][col]
 
 }
-// pred final condition
 
+// constrain the final condition to have a 32 tile on the board 
 pred finalState32[s: State] {
   some row, col : Int | {
     s.board[row][col] = THIRTYTWO
   }
 }
 
+// keep all tiles on the board
 pred validCord[i: Int]{
   not(i < 0) and not(i > 3)
 }
 
 
-
+// model the generation of a tile in a "random" location
 pred insert[pre: State, post: State]{
   pre.type = 1
   some row, col: Int | {
@@ -89,9 +78,7 @@ pred insert[pre: State, post: State]{
   }
 }
 
-// transition, move, something.
-// unclear what is necessary for this pred at this point in time.  
-// Can't move in a direction that you can't move in
+// model moving all tiles in a direction and associated collisions
 pred move [pre: State, theMove: Direction, post: State]{
   theMove = Left => {
     -- for all rows
@@ -318,10 +305,6 @@ pred move [pre: State, theMove: Direction, post: State]{
 
 // says if this move is a possible candidate for a move
 pred possibleMove[pre: State, d: Direction]{
-  // no post : State {
-  //   pre.board = post.board
-  //   move[]
-  // }
   not move[pre, d, pre]
 }
 
@@ -672,6 +655,7 @@ example blockedMerge is not {some pre, post: State, d: Direction | move[pre,d,po
     `S1 -> 0 -> 1 -> `T4
   }
 }
+
 example insertTwo is {some pre : State| insert[pre,pre.next]} for {
   State = `S0 + `S1
   next = {`S0 -> `S1}
@@ -912,9 +896,8 @@ example NotEnoughTilesInitState is not {some s: State| initState[s]} for {
     `S0 -> 0 -> 0 -> `T2
   }
 }
+
+//example trace!
 run {
   traces
 } for 3 Int, 30 State for {next is linear}
-
-
-// pred trace
